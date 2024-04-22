@@ -66,4 +66,62 @@ class ExpenseDatabase extends ChangeNotifier {
   }
 
   /* helper */
+
+  //total monthle expenses
+  Future<Map<int, double>> totalMonthlyExpenses() async {
+    // read expenses
+    await getAllExpenses();
+
+    Map<int, double> monthlyExpenses = {};
+
+    // loop through each expense
+    for (var expense in _allExpenses) {
+      // get month and year
+      int month = expense.data.month;
+
+      if (!monthlyExpenses.containsKey(month)) {
+        monthlyExpenses[month] = 0;
+      }
+
+      monthlyExpenses[month] = monthlyExpenses[month]! + expense.amount;
+    }
+
+    return monthlyExpenses;
+  }
+
+  // start month
+
+  int getStartMonth() {
+    if (_allExpenses.isEmpty) {
+      return DateTime.now().month;
+    }
+
+    //sort expenses
+    _allExpenses.sort(
+      (a, b) => a.data.compareTo(b.data),
+    );
+    return _allExpenses.first.data.month;
+  }
+
+  //start year
+
+  int getStartYear() {
+    if (_allExpenses.isEmpty) {
+      return DateTime.now().year;
+    }
+
+    //sort expenses
+    _allExpenses.sort(
+      (a, b) => a.data.compareTo(b.data),
+    );
+    return _allExpenses.first.data.year;
+  }
+
+  // Number of months since the first month
+  int calculateMonthCount(
+      int startYear, startMonth, currentYear, currentMonth) {
+    int monthCount =
+        (currentYear - startYear) * 12 + currentMonth - startMonth + 1;
+    return monthCount;
+  }
 }

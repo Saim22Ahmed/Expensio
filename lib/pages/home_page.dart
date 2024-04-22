@@ -1,4 +1,7 @@
+import 'dart:developer';
+
 import 'package:expense_tracker/components/MyListTile.dart';
+import 'package:expense_tracker/components/bar%20graph/bar_graph.dart';
 import 'package:expense_tracker/components/myTextField.dart';
 import 'package:expense_tracker/constants.dart';
 import 'package:expense_tracker/database/expense_database.dart';
@@ -6,6 +9,7 @@ import 'package:expense_tracker/helper/helper.dart';
 import 'package:expense_tracker/models/expense.dart';
 import 'package:expense_tracker/utils/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -128,40 +132,105 @@ class HomePageState extends ConsumerState<HomePage> {
             ));
   }
 
+  getStartMonth() {
+    return ref.read(expenseProvider.notifier).getStartMonth();
+  }
+
+  getStartYear() {
+    return ref.read(expenseProvider.notifier).getStartYear();
+  }
+
+  int getCurrentMonth() {
+    return DateTime.now().month;
+  }
+
+  int getCurrentYear() {
+    return DateTime.now().year;
+  }
+
+  int getMonthCount() {
+    return ref.read(expenseProvider.notifier).calculateMonthCount(
+        getStartYear(), getStartMonth(), getCurrentYear(), getCurrentMonth());
+  }
+
+  // bar graph future
+  Future<Map<int, double>>? _monthlyTotalFuture;
+
   @override
   void initState() {
     // TODO: implement initState
     ref.read(expenseProvider.notifier).getAllExpenses();
+    refreshBarData();
+
+    log('init state called');
     super.initState();
+  }
+
+  void refreshBarData() {
+    _monthlyTotalFuture =
+        ref.read(expenseProvider.notifier).totalMonthlyExpenses();
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
+    return Scaffold(
         floatingActionButton: FloatingActionButton(
           onPressed: () => addExpense(context),
           child: Icon(Icons.add),
         ),
-        body: ListView.builder(
-            itemCount: ref.watch(expenseProvider).allExpenses.length,
-            itemBuilder: (context, index) {
-              // individual expense
-              Expense expense = ref.watch(expenseProvider).allExpenses[index];
+        body: SafeArea(
+          child: Column(
+            children: [
+              // BarGraph
+              SizedBox(
+                height: 250,
+                child: FutureBuilder(
+                    future: _monthlyTotalFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done) {
+                        final monthlyTotals = snapshot.data ?? {};
+                        List<double> monthlySummary = List.generate(
+                            getMonthCount(),
+                            (index) =>
+                                monthlyTotals[getStartMonth() + index] ?? 0.0);
 
-              return MyListTile(
-                title: expense.name,
-                trailing: formatAmount(expense.amount),
-                onEditPressed: (context) => editExpense(expense),
-                onDeletePressed: (context) => deleteExpense(expense),
-              );
-            }),
-      ),
-    );
+                        return MyBarGraph(
+                            monthlySummary: monthlySummary,
+                            startMonth: getStartMonth());
+                      } else {
+                        return Center(
+                            child: const CircularProgressIndicator(
+                          color: themecolor,
+                        ));
+                      }
+                    }),
+              ),
+
+              20.verticalSpace,
+              // expenses
+              Expanded(
+                child: ListView.builder(
+                    itemCount: ref.watch(expenseProvider).allExpenses.length,
+                    itemBuilder: (context, index) {
+                      // individual expense
+                      Expense expense =
+                          ref.watch(expenseProvider).allExpenses[index];
+
+                      return MyListTile(
+                        title: expense.name,
+                        trailing: formatAmount(expense.amount),
+                        onEditPressed: (context) => editExpense(expense),
+                        onDeletePressed: (context) => deleteExpense(expense),
+                      );
+                    }),
+              ),
+            ],
+          ),
+        ));
   }
 
   cancelButton(BuildContext context) {
-    return TextButton(
+    return MaterialButton(
         onPressed: () {
           Navigator.pop(context);
           _expenseNameController.clear();
@@ -172,7 +241,7 @@ class HomePageState extends ConsumerState<HomePage> {
   }
 
   saveExpense(BuildContext context) {
-    return TextButton(
+    return MaterialButton(
         onPressed: () async {
           if (_expenseNameController.text.isEmpty ||
               _expenseAmountController.text.isEmpty) {
@@ -189,6 +258,8 @@ class HomePageState extends ConsumerState<HomePage> {
 
           await ref.read(expenseProvider.notifier).createExpense(expense);
 
+          refreshBarData();
+
           Navigator.pop(context);
           Utils().MySnackBar(
               context, 'Expense added successfully', Colors.green[600]);
@@ -200,7 +271,7 @@ class HomePageState extends ConsumerState<HomePage> {
   }
 
   saveEditedExpense(BuildContext context, Expense expense) {
-    return TextButton(
+    return MaterialButton(
         onPressed: () async {
           if (_expenseNameController.text.isNotEmpty ||
               _expenseAmountController.text.isNotEmpty) {
@@ -225,6 +296,8 @@ class HomePageState extends ConsumerState<HomePage> {
                 .updateExpense(existingExpenseId, updatedExpense);
           }
 
+          refreshBarData();
+
           _expenseAmountController.clear();
           _expenseNameController.clear();
         },
@@ -233,11 +306,12 @@ class HomePageState extends ConsumerState<HomePage> {
   }
 
   deleteButton(context, expense) {
-    return TextButton(
+    return MaterialButton(
         onPressed: () async {
           Navigator.pop(context);
 
           await ref.read(expenseProvider.notifier).deleteExpense(expense.id);
+          refreshBarData();
         },
         child: Text("DELETE",
             style: TextStyle(color: themecolor, fontWeight: FontWeight.bold)));
