@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -155,20 +156,22 @@ class HomePageState extends ConsumerState<HomePage> {
 
   // bar graph future
   Future<Map<int, double>>? _monthlyTotalFuture;
-
+  Future<double>? _currentMonthTotal;
   @override
   void initState() {
     // TODO: implement initState
     ref.read(expenseProvider.notifier).getAllExpenses();
-    refreshBarData();
+    refreshData();
 
     log('init state called');
     super.initState();
   }
 
-  void refreshBarData() {
+  void refreshData() {
     _monthlyTotalFuture =
         ref.read(expenseProvider.notifier).totalMonthlyExpenses();
+    _currentMonthTotal =
+        ref.read(expenseProvider.notifier).getCurrentMonthTotal();
   }
 
   @override
@@ -179,54 +182,120 @@ class HomePageState extends ConsumerState<HomePage> {
           child: Icon(Icons.add),
         ),
         body: SafeArea(
-          child: Column(
-            children: [
-              // BarGraph
-              SizedBox(
-                height: 250,
-                child: FutureBuilder(
-                    future: _monthlyTotalFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.done) {
-                        final monthlyTotals = snapshot.data ?? {};
-                        List<double> monthlySummary = List.generate(
-                            getMonthCount(),
-                            (index) =>
-                                monthlyTotals[getStartMonth() + index] ?? 0.0);
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 15.0),
+            child: Column(
+              children: [
+                20.verticalSpace,
 
-                        return MyBarGraph(
-                            monthlySummary: monthlySummary,
-                            startMonth: getStartMonth());
-                      } else {
-                        return Center(
-                            child: const CircularProgressIndicator(
-                          color: themecolor,
-                        ));
-                      }
-                    }),
-              ),
+                // current month total
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      ref.watch(expenseProvider).getCurrentMonthName(),
+                      style: TextStyle(
+                          fontFamily: GoogleFonts.righteous().fontFamily,
+                          fontSize: 20.sp),
+                    ),
+                    CurrentMonthTotal(),
+                  ],
+                ),
 
-              20.verticalSpace,
-              // expenses
-              Expanded(
-                child: ListView.builder(
-                    itemCount: ref.watch(expenseProvider).allExpenses.length,
-                    itemBuilder: (context, index) {
-                      // individual expense
-                      Expense expense =
-                          ref.watch(expenseProvider).allExpenses[index];
+                20.verticalSpace,
 
-                      return MyListTile(
-                        title: expense.name,
-                        trailing: formatAmount(expense.amount),
-                        onEditPressed: (context) => editExpense(expense),
-                        onDeletePressed: (context) => deleteExpense(expense),
-                      );
-                    }),
-              ),
-            ],
+                // BarGraph
+                SizedBox(
+                  height: 250,
+                  child: FutureBuilder(
+                      future: _monthlyTotalFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.done) {
+                          final monthlyTotals = snapshot.data ?? {};
+                          log('monthly Totals : ' + monthlyTotals.toString());
+                          log('monthcount : ' + getMonthCount().toString());
+                          log('startMonth : ' + getStartMonth().toString());
+                          List<double> monthlySummary = List.generate(
+                              getMonthCount(),
+                              (index) =>
+                                  monthlyTotals[(getStartMonth() + index)] ??
+                                  0.0);
+                          log('monthlySummary : ' + monthlySummary.toString());
+                          log('monthlyTotals : ' + monthlyTotals.toString());
+                          return MyBarGraph(
+                              monthlySummary: monthlySummary,
+                              startMonth: getStartMonth());
+                        } else {
+                          return Center(
+                              child: const CircularProgressIndicator(
+                            color: themecolor,
+                          ));
+                        }
+                      }),
+                ),
+
+                20.verticalSpace,
+                // expenses
+                Expanded(
+                  child: ListView.builder(
+                      itemCount: ref
+                          .watch(expenseProvider)
+                          .getCurrentMonthExpenses()
+                          .length,
+                      itemBuilder: (context, index) {
+                        // log('currentMonthTotal' +
+                        //     ref
+                        //         .watch(expenseProvider)
+                        //         .getCurrentMonthTotal()
+                        //         .toString());
+                        // reverse
+                        int reverseIndex = ref
+                                .watch(expenseProvider)
+                                .getCurrentMonthExpenses()
+                                .length -
+                            1 -
+                            index;
+
+                        // individual expense
+                        Expense expense = ref
+                            .watch(expenseProvider)
+                            .getCurrentMonthExpenses()[reverseIndex];
+
+                        return MyListTile(
+                          title: expense.name,
+                          trailing: formatAmount(expense.amount),
+                          onEditPressed: (context) => editExpense(expense),
+                          onDeletePressed: (context) => deleteExpense(expense),
+                        );
+                      }),
+                ),
+              ],
+            ),
           ),
         ));
+  }
+
+  FutureBuilder<double> CurrentMonthTotal() {
+    return FutureBuilder<double>(
+        future: _currentMonthTotal,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return Text(
+              '\$${snapshot.data!.toStringAsFixed(2)}',
+              style: TextStyle(
+                  fontFamily: GoogleFonts.righteous().fontFamily,
+                  fontSize: 20.sp),
+            );
+          } else {
+            return Center(
+                child: Transform.scale(
+              scale: 0.2,
+              child: const CircularProgressIndicator(
+                color: themecolor,
+              ),
+            ));
+          }
+        });
   }
 
   cancelButton(BuildContext context) {
@@ -258,7 +327,7 @@ class HomePageState extends ConsumerState<HomePage> {
 
           await ref.read(expenseProvider.notifier).createExpense(expense);
 
-          refreshBarData();
+          refreshData();
 
           Navigator.pop(context);
           Utils().MySnackBar(
@@ -296,7 +365,7 @@ class HomePageState extends ConsumerState<HomePage> {
                 .updateExpense(existingExpenseId, updatedExpense);
           }
 
-          refreshBarData();
+          refreshData();
 
           _expenseAmountController.clear();
           _expenseNameController.clear();
@@ -311,7 +380,7 @@ class HomePageState extends ConsumerState<HomePage> {
           Navigator.pop(context);
 
           await ref.read(expenseProvider.notifier).deleteExpense(expense.id);
-          refreshBarData();
+          refreshData();
         },
         child: Text("DELETE",
             style: TextStyle(color: themecolor, fontWeight: FontWeight.bold)));

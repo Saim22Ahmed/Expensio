@@ -124,4 +124,47 @@ class ExpenseDatabase extends ChangeNotifier {
         (currentYear - startYear) * 12 + currentMonth - startMonth + 1;
     return monthCount;
   }
+
+  List<Expense> getCurrentMonthExpenses() {
+    List<Expense> currentMonthExpenses = allExpenses.where(
+      (expense) {
+        return expense.data.month == DateTime.now().month &&
+            expense.data.year == DateTime.now().year;
+      },
+    ).toList();
+    return currentMonthExpenses;
+  }
+
+  Future<double> getCurrentMonthTotal() async {
+    await getAllExpenses();
+
+    int currentMonth = DateTime.now().month;
+    int currentYear = DateTime.now().year;
+
+    List<Expense> currentMonthExpense = getCurrentMonthExpenses();
+
+    double total =
+        currentMonthExpense.fold(0, (sum, element) => sum + element.amount);
+
+    return total;
+  }
+
+  String getCurrentMonthName() {
+    DateTime now = DateTime.now();
+    List<String> months = [
+      "JANUARY",
+      "FEBRUARY",
+      "MARCH",
+      "APRIL",
+      "MAY",
+      "JUNE",
+      "JULY",
+      "AUGUST",
+      "SEPTEMBER",
+      "OCTOBER",
+      "NOVEMBER",
+      "DECEMBER"
+    ];
+    return months[now.month - 1];
+  }
 }
