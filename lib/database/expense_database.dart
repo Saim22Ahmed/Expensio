@@ -68,22 +68,22 @@ class ExpenseDatabase extends ChangeNotifier {
   /* helper */
 
   //total monthle expenses
-  Future<Map<int, double>> totalMonthlyExpenses() async {
+  Future<Map<String, double>> totalMonthlyExpenses() async {
     // read expenses
     await getAllExpenses();
 
-    Map<int, double> monthlyExpenses = {};
+    Map<String, double> monthlyExpenses = {};
 
     // loop through each expense
     for (var expense in _allExpenses) {
       // get month and year
-      int month = expense.data.month;
+      String yearMonth = "${expense.data.year}-${expense.data.month}";
 
-      if (!monthlyExpenses.containsKey(month)) {
-        monthlyExpenses[month] = 0;
+      if (!monthlyExpenses.containsKey(yearMonth)) {
+        monthlyExpenses[yearMonth] = 0;
       }
 
-      monthlyExpenses[month] = monthlyExpenses[month]! + expense.amount;
+      monthlyExpenses[yearMonth] = monthlyExpenses[yearMonth]! + expense.amount;
     }
 
     return monthlyExpenses;
@@ -166,5 +166,10 @@ class ExpenseDatabase extends ChangeNotifier {
       "DECEMBER"
     ];
     return months[now.month - 1];
+  }
+
+  // get current year name
+  String getCurrentYearName() {
+    return DateTime.now().year.toString();
   }
 }

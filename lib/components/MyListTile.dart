@@ -36,9 +36,16 @@ class MyListTile extends StatelessWidget {
           // label: 'Delete',
         ),
       ]),
-      child: ListTile(
-        title: Text(title),
-        trailing: Text(trailing),
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondary.withOpacity(0.4),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: ListTile(
+          title: Text(title),
+          trailing: Text(trailing),
+        ),
       ),
     );
   }

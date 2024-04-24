@@ -2,14 +2,17 @@ import 'dart:developer';
 
 import 'package:expense_tracker/components/MyListTile.dart';
 import 'package:expense_tracker/components/bar%20graph/bar_graph.dart';
+import 'package:expense_tracker/components/drawer/mydrawer.dart';
 import 'package:expense_tracker/components/myTextField.dart';
 import 'package:expense_tracker/constants.dart';
 import 'package:expense_tracker/database/expense_database.dart';
 import 'package:expense_tracker/helper/helper.dart';
 import 'package:expense_tracker/models/expense.dart';
+import 'package:expense_tracker/provider/theme_provider.dart';
 import 'package:expense_tracker/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -155,12 +158,13 @@ class HomePageState extends ConsumerState<HomePage> {
   }
 
   // bar graph future
-  Future<Map<int, double>>? _monthlyTotalFuture;
+  Future<Map<String, double>>? _monthlyTotalFuture;
   Future<double>? _currentMonthTotal;
   @override
   void initState() {
     // TODO: implement initState
     ref.read(expenseProvider.notifier).getAllExpenses();
+
     refreshData();
 
     log('init state called');
@@ -176,103 +180,127 @@ class HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => addExpense(context),
-          child: Icon(Icons.add),
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 15.0),
-            child: Column(
-              children: [
-                20.verticalSpace,
-
-                // current month total
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      ref.watch(expenseProvider).getCurrentMonthName(),
-                      style: TextStyle(
-                          fontFamily: GoogleFonts.righteous().fontFamily,
-                          fontSize: 20.sp),
-                    ),
-                    CurrentMonthTotal(),
-                  ],
-                ),
-
-                20.verticalSpace,
-
-                // BarGraph
-                SizedBox(
-                  height: 250,
-                  child: FutureBuilder(
-                      future: _monthlyTotalFuture,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.done) {
-                          final monthlyTotals = snapshot.data ?? {};
-                          log('monthly Totals : ' + monthlyTotals.toString());
-                          log('monthcount : ' + getMonthCount().toString());
-                          log('startMonth : ' + getStartMonth().toString());
-                          List<double> monthlySummary = List.generate(
-                              getMonthCount(),
-                              (index) =>
-                                  monthlyTotals[(getStartMonth() + index)] ??
-                                  0.0);
-                          log('monthlySummary : ' + monthlySummary.toString());
-                          log('monthlyTotals : ' + monthlyTotals.toString());
-                          return MyBarGraph(
-                              monthlySummary: monthlySummary,
-                              startMonth: getStartMonth());
-                        } else {
-                          return Center(
-                              child: const CircularProgressIndicator(
-                            color: themecolor,
-                          ));
-                        }
-                      }),
-                ),
-
-                20.verticalSpace,
-                // expenses
-                Expanded(
-                  child: ListView.builder(
-                      itemCount: ref
-                          .watch(expenseProvider)
-                          .getCurrentMonthExpenses()
-                          .length,
-                      itemBuilder: (context, index) {
-                        // log('currentMonthTotal' +
-                        //     ref
-                        //         .watch(expenseProvider)
-                        //         .getCurrentMonthTotal()
-                        //         .toString());
-                        // reverse
-                        int reverseIndex = ref
-                                .watch(expenseProvider)
-                                .getCurrentMonthExpenses()
-                                .length -
-                            1 -
-                            index;
-
-                        // individual expense
-                        Expense expense = ref
-                            .watch(expenseProvider)
-                            .getCurrentMonthExpenses()[reverseIndex];
-
-                        return MyListTile(
-                          title: expense.name,
-                          trailing: formatAmount(expense.amount),
-                          onEditPressed: (context) => editExpense(expense),
-                          onDeletePressed: (context) => deleteExpense(expense),
-                        );
-                      }),
-                ),
-              ],
-            ),
+    return Consumer(
+        builder: (BuildContext context, WidgetRef ref, Widget? child) {
+      ref.watch(themeProvider).addListener(() {
+        refreshData();
+        // setState(() {});
+      });
+      return Scaffold(
+          drawer: MyDrawer(),
+          appBar: AppBar(),
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerFloat,
+          floatingActionButton: FloatingActionButton(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
+            onPressed: () => addExpense(context),
+            child: Icon(Icons.add),
           ),
-        ));
+          body: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10.0),
+              child: Column(
+                children: [
+                  20.verticalSpace,
+
+                  // BarGraph
+                  SizedBox(
+                    height: 250,
+                    child: FutureBuilder(
+                        future: _monthlyTotalFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.done) {
+                            Map<String, double> monthlyTotals =
+                                snapshot.data ?? {};
+
+                            List<double> monthlySummary =
+                                List.generate(getMonthCount(), (index) {
+                              int year = getStartYear() +
+                                  (getStartMonth() + index - 1) ~/ 12;
+                              int month =
+                                  (getStartMonth() + index - 1) % 12 + 1;
+
+                              // key
+
+                              String key = "$year-$month";
+
+                              return monthlyTotals[key] ?? 0.0;
+                            });
+
+                            return MyBarGraph(
+                                monthlySummary: monthlySummary,
+                                startMonth: getStartMonth());
+                          } else {
+                            return Center(
+                                child: const CircularProgressIndicator(
+                              color: themecolor,
+                            ));
+                          }
+                        }),
+                  ),
+
+                  20.verticalSpace,
+                  // current month total
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "${ref.watch(expenseProvider).getCurrentMonthName()} '${ref.watch(expenseProvider).getCurrentYearName()}",
+                          style: TextStyle(
+                              fontFamily: GoogleFonts.righteous().fontFamily,
+                              fontSize: 20.sp),
+                        ),
+                        CurrentMonthTotal(),
+                      ],
+                    ),
+                  ),
+                  20.verticalSpace,
+                  // expenses
+                  Expanded(
+                    child: ListView.builder(
+                        physics: BouncingScrollPhysics(),
+                        itemCount: ref
+                            .watch(expenseProvider)
+                            .getCurrentMonthExpenses()
+                            .length,
+                        itemBuilder: (context, index) {
+                          // log('currentMonthTotal' +
+                          //     ref
+                          //         .watch(expenseProvider)
+                          //         .getCurrentMonthTotal()
+                          //         .toString());
+                          // reverse
+                          int reverseIndex = ref
+                                  .watch(expenseProvider)
+                                  .getCurrentMonthExpenses()
+                                  .length -
+                              1 -
+                              index;
+
+                          // individual expense
+                          Expense expense = ref
+                              .watch(expenseProvider)
+                              .getCurrentMonthExpenses()[reverseIndex];
+
+                          return MyListTile(
+                            title: expense.name,
+                            trailing: formatAmount(expense.amount),
+                            onEditPressed: (context) => editExpense(expense),
+                            onDeletePressed: (context) =>
+                                deleteExpense(expense),
+                          );
+                        }),
+                  ),
+                ],
+              ),
+            ),
+          ));
+    });
   }
 
   FutureBuilder<double> CurrentMonthTotal() {

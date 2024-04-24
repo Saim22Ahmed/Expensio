@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:expense_tracker/theme/dark_theme.dart';
 import 'package:expense_tracker/theme/light_theme.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +10,7 @@ final themeProvider = ChangeNotifierProvider<ThemeNotifier>(
 );
 
 class ThemeNotifier extends ChangeNotifier {
-  ThemeData _themeData = lightTheme;
+  ThemeData _themeData = darkTheme;
 
   ThemeData get themeData => _themeData;
 
@@ -18,6 +20,7 @@ class ThemeNotifier extends ChangeNotifier {
   }
 
   void toggleTheme() {
+    log('toggling theme');
     themeData = _themeData == lightTheme ? darkTheme : lightTheme;
 
     notifyListeners();
