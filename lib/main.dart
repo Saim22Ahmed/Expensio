@@ -31,7 +31,7 @@ class MyApp extends ConsumerWidget {
         title: 'Expense Tracker',
         theme: ref.watch(themeProvider).themeData,
         // darkTheme: darkTheme,
-        home: ExpenseDetails(),
+        home: HomePage(),
       ),
     );
   }
