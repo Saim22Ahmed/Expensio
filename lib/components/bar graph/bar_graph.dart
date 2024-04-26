@@ -73,39 +73,44 @@ class _MyBarGraphState extends State<MyBarGraph> {
       child: SizedBox(
         width:
             barWidth * barData.length + spaceBetweenBars * (barData.length - 1),
-        child: BarChart(BarChartData(
-          minY: 0,
-          maxY: calculateMaxValue(),
-          gridData: FlGridData(show: false),
-          borderData: FlBorderData(show: false),
-          titlesData: FlTitlesData(
-              show: true,
-              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles:
-                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                      reservedSize: 25.sp,
-                      showTitles: true,
-                      getTitlesWidget: getBottomTitles))),
-          barGroups: barData
-              .map((data) => BarChartGroupData(x: data.x, barRods: [
-                    BarChartRodData(
-                      toY: data.y,
-                      width: 20.sp,
-                      borderRadius: BorderRadius.circular(5.r),
-                      color: themecolor,
-                      backDrawRodData: BackgroundBarChartRodData(
-                          toY: calculateMaxValue(),
-                          show: true,
-                          color: Theme.of(context).colorScheme.primary),
-                    )
-                  ]))
-              .toList(),
-          alignment: BarChartAlignment.center,
-          groupsSpace: spaceBetweenBars,
-        )).animate().shimmer(
+        child: BarChart(
+                swapAnimationDuration: const Duration(milliseconds: 750),
+                swapAnimationCurve: Curves.fastOutSlowIn,
+                BarChartData(
+                  minY: 0,
+                  maxY: calculateMaxValue(),
+                  gridData: FlGridData(show: false),
+                  borderData: FlBorderData(show: false),
+                  titlesData: FlTitlesData(
+                      show: true,
+                      topTitles:
+                          AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles:
+                          AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      leftTitles:
+                          AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                              reservedSize: 25.sp,
+                              showTitles: true,
+                              getTitlesWidget: getBottomTitles))),
+                  barGroups: barData
+                      .map((data) => BarChartGroupData(x: data.x, barRods: [
+                            BarChartRodData(
+                              toY: data.y,
+                              width: 20.sp,
+                              borderRadius: BorderRadius.circular(5.r),
+                              color: themecolor,
+                              backDrawRodData: BackgroundBarChartRodData(
+                                  toY: calculateMaxValue(),
+                                  show: true,
+                                  color: Theme.of(context).colorScheme.primary),
+                            )
+                          ]))
+                      .toList(),
+                  alignment: BarChartAlignment.center,
+                  groupsSpace: spaceBetweenBars,
+                )).animate().shimmer(
               duration: 2.seconds,
               angle: 90,
             ),

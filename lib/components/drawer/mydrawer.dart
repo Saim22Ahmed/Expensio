@@ -41,7 +41,7 @@ class MyDrawer extends StatelessWidget {
                 ),
                 GestureDetector(
                   onTap: () {
-                    // Navigator.pop(context);
+                    Navigator.pop(context);
                     Navigator.push(
                         context,
                         MaterialPageRoute(

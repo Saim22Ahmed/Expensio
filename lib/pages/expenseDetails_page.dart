@@ -1,12 +1,18 @@
+import 'dart:async';
 import 'dart:developer';
+
 import 'dart:math' as mi;
 import 'dart:ui';
 
+import 'package:expense_tracker/components/expense_card.dart';
+import 'package:expense_tracker/constants.dart';
 import 'package:expense_tracker/database/expense_database.dart';
 import 'package:expense_tracker/models/expense.dart';
+import 'package:expense_tracker/utils/colorGenerator.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_randomcolor/flutter_randomcolor.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -19,36 +25,60 @@ class ExpenseDetails extends ConsumerStatefulWidget {
 }
 
 class ExpenseDetailsState extends ConsumerState<ExpenseDetails> {
-  List<Color> myColorList = [
-    Colors.red,
-    Colors.blue,
-    Colors.green,
-    Colors.yellow
-  ];
+  Future<double>? _getCurrentMonthTotal;
+  List<Expense>? _currentMonthExpense;
 
-  List<Color> generateDifferentRandomColors(int count) {
-    List<Color> result = [];
-    mi.Random random = mi.Random();
+  int? touchIndex;
 
-    // Generate a list of random colors from Colors.primaries
-    while (result.length < count) {
-      Color newColor =
-          Colors.primaries[random.nextInt(myColorList.length)].withOpacity(1.0);
-      // Check if the new color is different from the existing ones
-      bool isDifferent = true;
-      for (Color existingColor in result) {
-        if (newColor.value == existingColor.value) {
-          isDifferent = false;
-          break;
-        }
-      }
-      // If the new color is different, add it to the result list
-      if (isDifferent) {
-        result.add(newColor);
-      }
-    }
+  ColorGenerator colorGenerator = ColorGenerator();
 
-    return result;
+  void refreshData() {
+    _getCurrentMonthTotal =
+        ref.read(expenseProvider.notifier).getCurrentMonthTotal();
+
+    _currentMonthExpense =
+        ref.read(expenseProvider.notifier).getCurrentMonthExpenses();
+  }
+
+  FutureBuilder<double> CurrentMonthTotal() {
+    return FutureBuilder<double>(
+        future: _getCurrentMonthTotal,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return Text(
+              '${snapshot.data!.toStringAsFixed(2)}',
+              style: TextStyle(
+                  fontFamily: GoogleFonts.righteous().fontFamily,
+                  fontSize: 20.sp),
+            );
+          } else {
+            return Center(
+                child: Transform.scale(
+              scale: 0.2,
+              child: const CircularProgressIndicator(
+                color: themecolor,
+              ),
+            ));
+          }
+        });
+  }
+
+  Expense getHighestExpense() {
+    List<Expense> currentMonthExpense = _currentMonthExpense!;
+
+    currentMonthExpense.sort((a, b) => b.amount.compareTo(a.amount));
+
+    final highest = currentMonthExpense.first;
+
+    return highest;
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    refreshData();
+
+    super.initState();
   }
 
   @override
@@ -59,68 +89,156 @@ class ExpenseDetailsState extends ConsumerState<ExpenseDetails> {
           automaticallyImplyLeading: true,
         ),
         body: Column(
-          // mainAxisAlignment: MainAxisAlignment.start,
+          // mainAxisAlignment: MainAxisAlignment.center,
+          // crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text('${ref.watch(expenseProvider).getCurrentMonthName()} EXPENSES',
-                style: TextStyle(
-                  fontFamily: GoogleFonts.righteous().fontFamily,
-                  fontSize: 26.sp,
-                )),
-            10.verticalSpace,
+            Center(
+              child: Text(
+                  '${ref.watch(expenseProvider).getCurrentMonthName()} EXPENSES',
+                  style: TextStyle(
+                    fontFamily: GoogleFonts.righteous().fontFamily,
+                    fontSize: 26.sp,
+                  )),
+            ),
+
+            20.verticalSpace,
+            //Future Builder
+
             SizedBox(
               height: 300.h,
-              child: PieChart(
-                PieChartData(
-                  pieTouchData: PieTouchData(
-                    touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                      if (!event.isInterestedForInteractions ||
-                          pieTouchResponse == null ||
-                          pieTouchResponse.touchedSection == null) {
-                        return;
+              child: FutureBuilder<double>(
+                  future: _getCurrentMonthTotal,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.done) {
+                      double currentMonthTotal = snapshot.data ?? 0.0;
+
+                      List<Expense> currentMonthExpense = _currentMonthExpense!;
+                      getHighestExpense();
+
+                      // Calculate total expense amount for the current month
+                      double totalExpenseAmount = currentMonthExpense.fold(
+                          0,
+                          (previousValue, element) =>
+                              previousValue + element.amount);
+
+                      // highgest expense
+                      if (currentMonthExpense.isNotEmpty) {
+                        Expense highestExpense = currentMonthExpense.reduce(
+                            (value, element) => value.amount > element.amount
+                                ? value
+                                : element);
+
+                        // Set the provider
+
+                        log('highestExpense : ' +
+                            highestExpense.name +
+                            ' : ' +
+                            highestExpense.amount.toString());
                       }
-                    },
-                  ),
-                  // sections: pieChartSections,
-                  sectionsSpace: 10,
-                  centerSpaceRadius: double.infinity,
-                ),
-              ).animate().shimmer(duration: const Duration(seconds: 2)),
+
+                      List<PieChartSectionData> pieChartSections =
+                          currentMonthExpense.map((expense) {
+                        // Calculate percentage of total amount for each expense
+                        double percentage =
+                            (expense.amount / totalExpenseAmount) * 100;
+
+                        // Check if the current expense is being touched
+
+                        log('touchIndex 2:' + touchIndex.toString());
+
+                        return PieChartSectionData(
+                            badgeWidget:
+                                _buildBadgeWidget(expense.name, themecolor),
+                            badgePositionPercentageOffset: 0.98,
+                            titlePositionPercentageOffset: 0.65,
+                            value: percentage,
+                            title: '${percentage.toStringAsFixed(2)}%',
+                            titleStyle: TextStyle(
+                                fontFamily: GoogleFonts.righteous().fontFamily,
+                                fontSize: 16.sp,
+                                color: Colors.white),
+                            color: colorGenerator.getNextColor(),
+                            radius: 120);
+                      }).toList();
+
+                      return PieChart(
+                          swapAnimationDuration: Duration(milliseconds: 750),
+                          swapAnimationCurve: Curves.fastOutSlowIn,
+                          PieChartData(
+                              startDegreeOffset: 0,
+                              sections: pieChartSections,
+                              sectionsSpace: 10,
+                              centerSpaceRadius: 0,
+                              pieTouchData: PieTouchData(
+                                enabled: true,
+                                touchCallback:
+                                    (FlTouchEvent event, pieTouchResponse) {
+                                  setState(() {
+                                    if (!event.isInterestedForInteractions ||
+                                        pieTouchResponse == null ||
+                                        pieTouchResponse.touchedSection ==
+                                            null) {
+                                      touchIndex = -1;
+                                      return;
+                                    } else {
+                                      touchIndex = pieTouchResponse
+                                          .touchedSection!.touchedSectionIndex;
+                                      log('touchIndex:' +
+                                          touchIndex.toString());
+                                    }
+                                  });
+
+                                  // touched section radious increase
+                                },
+                              )));
+                    } else {
+                      return Center(
+                          child: Transform.scale(
+                        scale: 0.2,
+                        child: const CircularProgressIndicator(
+                          color: themecolor,
+                        ),
+                      ));
+                    }
+                  }),
+            ),
+
+            30.verticalSpace,
+
+            //Total Expense
+            ExpenseCard(
+              title: 'Total Expense',
+              amount: CurrentMonthTotal(),
+            ),
+
+            // Most Expensive Expense
+            ExpenseCard(
+              title: 'Most Expensive',
+              amount: Text(
+                '${getHighestExpense().name} (${getHighestExpense().amount})',
+                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildBadgeWidget(String expenseName, Color color) {
+    return Container(
+      padding: EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(color: Colors.black26, offset: Offset(0, 2), blurRadius: 6)
+        ],
+      ),
+      child: Text(
+        expenseName,
+        style: TextStyle(color: Colors.white),
+      ),
+    );
+  }
 }
-
-
-
-
-//  List<Expense> currentMonthExpense =
-//               ref.watch(expenseProvider).getCurrentMonthExpenses();
-
-//           log(currentMonthExpense[0].name.toString());
-//           log(currentMonthExpense[1].name.toString());
-//           log(currentMonthExpense[2].name.toString());
-//           // log(currentMonthExpense[3].name.toString());
-
-//           // Calculate total expense amount for the current month
-//           double totalExpenseAmount = currentMonthExpense.fold(
-//               0, (previousValue, element) => previousValue + element.amount);
-
-//           log(totalExpenseAmount.toString());
-
-//           List<PieChartSectionData> pieChartSections =
-//               currentMonthExpense.map((expense) {
-//             // Calculate percentage of total amount for each expense
-//             double percentage = (expense.amount / totalExpenseAmount) * 100;
-
-//             return PieChartSectionData(
-//               color: generateDifferentRandomColors(
-//                   10)[0], // You can define a function to get random colors
-//               value: percentage,
-//               title: '${expense.amount}',
-//               radius: 100.0,
-//             );
-//           }).toList();
-
