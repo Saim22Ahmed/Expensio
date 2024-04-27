@@ -35,7 +35,7 @@ We value your feedback! If you have any questions, suggestions, or encounter any
 
 ## Connect with me
 
-linkedin : linkedin.com/in/saim22ahmed
+linkedin : [www.linkedin.com/in/saim22ahmed](https://www.linkedin.com/in/saim22ahmed/)
 
 
 For help getting started with Flutter development, view the
