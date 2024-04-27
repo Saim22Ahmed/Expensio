@@ -1,3 +1,4 @@
+import 'package:expense_tracker/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -17,7 +18,7 @@ ThemeData darkTheme = ThemeData(
   ),
   floatingActionButtonTheme: FloatingActionButtonThemeData(
     splashColor: Colors.white,
-    backgroundColor: Color(0xff00B4D8),
+    backgroundColor: themecolor,
     foregroundColor: Colors.white,
   ),
   colorScheme: ColorScheme.dark(

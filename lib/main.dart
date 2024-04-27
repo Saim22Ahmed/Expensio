@@ -1,6 +1,7 @@
 import 'package:expense_tracker/database/expense_database.dart';
 import 'package:expense_tracker/pages/expenseDetails_page.dart';
 import 'package:expense_tracker/pages/home_page.dart';
+import 'package:expense_tracker/pages/splash_scree.dart';
 import 'package:expense_tracker/provider/theme_provider.dart';
 import 'package:expense_tracker/theme/dark_theme.dart';
 import 'package:expense_tracker/theme/light_theme.dart';
@@ -13,7 +14,7 @@ import 'package:isar/isar.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ExpenseDatabase.initiliazeDB();
-
+  Animate.restartOnHotReload = true;
   runApp(ProviderScope(child: const MyApp()));
   // Animate.restartOnHotReload = true;
 }
@@ -31,7 +32,7 @@ class MyApp extends ConsumerWidget {
         title: 'Expense Tracker',
         theme: ref.watch(themeProvider).themeData,
         // darkTheme: darkTheme,
-        home: HomePage(),
+        home: SplashScreen(),
       ),
     );
   }

@@ -69,6 +69,7 @@ class MyDrawer extends StatelessWidget {
                   builder:
                       (BuildContext context, WidgetRef ref, Widget? child) {
                     return Switch(
+                        activeColor: themecolor,
                         inactiveTrackColor:
                             Theme.of(context).colorScheme.onTertiary,
                         activeTrackColor:

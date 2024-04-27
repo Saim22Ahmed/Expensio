@@ -1,3 +1,4 @@
+import 'package:expense_tracker/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -7,7 +8,7 @@ ThemeData lightTheme = ThemeData(
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ButtonStyle(
       backgroundColor: MaterialStateProperty.all(
-        Color(0xff00B4D8),
+        themecolor,
       ),
       foregroundColor: MaterialStateProperty.all(Colors.white),
       minimumSize: MaterialStateProperty.all(Size(100, 50)),
@@ -28,8 +29,8 @@ ThemeData lightTheme = ThemeData(
     onPrimaryContainer: Colors.grey[500]!,
     secondary: Colors.grey[300]!,
     onSecondary: Colors.grey[600]!,
-    tertiary: Color(0xff00B4D8),
-    onTertiary: Color(0xff00B4D8),
+    tertiary: themecolor,
+    onTertiary: themecolor,
     inversePrimary: Colors.grey[600]!,
     onInverseSurface: Colors.grey[900]!,
     onBackground: Colors.white,

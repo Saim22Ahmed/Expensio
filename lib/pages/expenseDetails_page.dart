@@ -73,6 +73,16 @@ class ExpenseDetailsState extends ConsumerState<ExpenseDetails> {
     return highest;
   }
 
+  Expense getLeastExpense() {
+    List<Expense> currentMonthExpense = _currentMonthExpense!;
+
+    currentMonthExpense.sort((a, b) => b.amount.compareTo(a.amount));
+
+    final least = currentMonthExpense.last;
+
+    return least;
+  }
+
   @override
   void initState() {
     // TODO: implement initState
@@ -216,6 +226,14 @@ class ExpenseDetailsState extends ConsumerState<ExpenseDetails> {
               title: 'Most Expensive',
               amount: Text(
                 '${getHighestExpense().name} (${getHighestExpense().amount})',
+                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+              ),
+            ),
+            // Most Expensive Expense
+            ExpenseCard(
+              title: 'Least Expensive',
+              amount: Text(
+                '${getLeastExpense().name} (${getLeastExpense().amount})',
                 style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
               ),
             ),
