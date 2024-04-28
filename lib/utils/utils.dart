@@ -9,7 +9,7 @@ class Utils {
       duration: Duration(seconds: 2),
       behavior: SnackBarBehavior.floating,
       margin: EdgeInsets.only(
-          bottom: MediaQuery.of(context).size.height - 150,
+          bottom: MediaQuery.of(context).size.height - 170,
           right: 20,
           left: 20),
       content: Text(

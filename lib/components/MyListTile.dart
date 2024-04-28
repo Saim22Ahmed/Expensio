@@ -20,7 +20,9 @@ class MyListTile extends StatelessWidget {
     return Slidable(
       endActionPane: ActionPane(motion: StretchMotion(), children: [
         //edit
+
         SlidableAction(
+          // autoClose: true,
           onPressed: onEditPressed,
           backgroundColor: Colors.transparent,
           foregroundColor: themecolor,

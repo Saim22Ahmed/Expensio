@@ -16,7 +16,7 @@ ThemeData lightTheme = ThemeData(
   ),
   floatingActionButtonTheme: FloatingActionButtonThemeData(
     splashColor: Colors.white,
-    backgroundColor: Color(0xff00B4D8),
+    backgroundColor: themecolor,
     foregroundColor: Colors.white,
   ),
   appBarTheme: AppBarTheme(

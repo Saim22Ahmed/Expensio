@@ -186,120 +186,122 @@ class HomePageState extends ConsumerState<HomePage> {
         refreshData();
         // setState(() {});
       });
-      return Scaffold(
-          drawer: MyDrawer(),
-          appBar: AppBar(),
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerFloat,
-          floatingActionButton: FloatingActionButton(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
-            onPressed: () => addExpense(context),
-            child: Icon(Icons.add),
-          ),
-          body: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10.0),
-              child: Column(
-                children: [
-                  20.verticalSpace,
-
-                  // BarGraph
-                  SizedBox(
-                    height: 250,
-                    child: FutureBuilder(
-                        future: _monthlyTotalFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.done) {
-                            Map<String, double> monthlyTotals =
-                                snapshot.data ?? {};
-
-                            List<double> monthlySummary =
-                                List.generate(getMonthCount(), (index) {
-                              int year = getStartYear() +
-                                  (getStartMonth() + index - 1) ~/ 12;
-                              int month =
-                                  (getStartMonth() + index - 1) % 12 + 1;
-
-                              // key
-
-                              String key = "$year-$month";
-
-                              return monthlyTotals[key] ?? 0.0;
-                            });
-
-                            return MyBarGraph(
-                                monthlySummary: monthlySummary,
-                                startMonth: getStartMonth());
-                          } else {
-                            return Center(
-                                child: const CircularProgressIndicator(
-                              color: themecolor,
-                            ));
-                          }
-                        }),
-                  ),
-
-                  20.verticalSpace,
-                  // current month total
-                  Container(
-                    margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "${ref.watch(expenseProvider).getCurrentMonthName()} '${ref.watch(expenseProvider).getCurrentYearName()}",
-                          style: TextStyle(
-                              fontFamily: GoogleFonts.righteous().fontFamily,
-                              fontSize: 20.sp),
-                        ),
-                        CurrentMonthTotal(),
-                      ],
-                    ),
-                  ),
-                  20.verticalSpace,
-                  // expenses
-                  Expanded(
-                    child: ListView.builder(
-                        physics: BouncingScrollPhysics(),
-                        itemCount: ref
-                            .watch(expenseProvider)
-                            .getCurrentMonthExpenses()
-                            .length,
-                        itemBuilder: (context, index) {
-                          // log('currentMonthTotal' +
-                          //     ref
-                          //         .watch(expenseProvider)
-                          //         .getCurrentMonthTotal()
-                          //         .toString());
-                          // reverse
-                          int reverseIndex = ref
-                                  .watch(expenseProvider)
-                                  .getCurrentMonthExpenses()
-                                  .length -
-                              1 -
-                              index;
-
-                          // individual expense
-                          Expense expense = ref
-                              .watch(expenseProvider)
-                              .getCurrentMonthExpenses()[reverseIndex];
-
-                          return MyListTile(
-                            title: expense.name,
-                            trailing: formatAmount(expense.amount),
-                            onEditPressed: (context) => editExpense(expense),
-                            onDeletePressed: (context) =>
-                                deleteExpense(expense),
-                          );
-                        }),
-                  ),
-                ],
-              ),
+      return SafeArea(
+        child: Scaffold(
+            drawer: MyDrawer(),
+            appBar: AppBar(),
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
+            floatingActionButton: FloatingActionButton(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(40)),
+              onPressed: () => addExpense(context),
+              child: Icon(Icons.add),
             ),
-          ));
+            body: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10.0),
+                child: Column(
+                  children: [
+                    20.verticalSpace,
+
+                    // BarGraph
+                    SizedBox(
+                      height: 250,
+                      child: FutureBuilder(
+                          future: _monthlyTotalFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.done) {
+                              Map<String, double> monthlyTotals =
+                                  snapshot.data ?? {};
+
+                              List<double> monthlySummary =
+                                  List.generate(getMonthCount(), (index) {
+                                int year = getStartYear() +
+                                    (getStartMonth() + index - 1) ~/ 12;
+                                int month =
+                                    (getStartMonth() + index - 1) % 12 + 1;
+
+                                // key
+
+                                String key = "$year-$month";
+
+                                return monthlyTotals[key] ?? 0.0;
+                              });
+
+                              return MyBarGraph(
+                                  monthlySummary: monthlySummary,
+                                  startMonth: getStartMonth());
+                            } else {
+                              return Center(
+                                  child: const CircularProgressIndicator(
+                                color: themecolor,
+                              ));
+                            }
+                          }),
+                    ),
+
+                    20.verticalSpace,
+                    // current month total
+                    Container(
+                      margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "${ref.watch(expenseProvider).getCurrentMonthName()} '${ref.watch(expenseProvider).getCurrentYearName()}",
+                            style: TextStyle(
+                                fontFamily: GoogleFonts.righteous().fontFamily,
+                                fontSize: 20.sp),
+                          ),
+                          CurrentMonthTotal(),
+                        ],
+                      ),
+                    ),
+                    20.verticalSpace,
+                    // expenses
+                    Expanded(
+                      child: ListView.builder(
+                          physics: BouncingScrollPhysics(),
+                          itemCount: ref
+                              .watch(expenseProvider)
+                              .getCurrentMonthExpenses()
+                              .length,
+                          itemBuilder: (context, index) {
+                            // log('currentMonthTotal' +
+                            //     ref
+                            //         .watch(expenseProvider)
+                            //         .getCurrentMonthTotal()
+                            //         .toString());
+                            // reverse
+                            int reverseIndex = ref
+                                    .watch(expenseProvider)
+                                    .getCurrentMonthExpenses()
+                                    .length -
+                                1 -
+                                index;
+
+                            // individual expense
+                            Expense expense = ref
+                                .watch(expenseProvider)
+                                .getCurrentMonthExpenses()[reverseIndex];
+
+                            return MyListTile(
+                              title: expense.name,
+                              trailing: formatAmount(expense.amount),
+                              onEditPressed: (context) => editExpense(expense),
+                              onDeletePressed: (context) =>
+                                  deleteExpense(expense),
+                            );
+                          }),
+                    ),
+                  ],
+                ),
+              ),
+            )),
+      );
     });
   }
 
